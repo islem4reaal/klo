@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Virtual env
+.venv/
+venv/
+
+# Env vars (you'll need this in Week 2 for the Claude API key)
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test/sample data (keep the folder, not the contents)
+data/*
+!data/.gitkeep
+
+# Packaging output (Week 3)
+build/
+dist/
+*.spec
