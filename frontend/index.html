@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Insight Copilot</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --panel: #ffffff;
+    --border: #dcdcd8;
+    --ink: #17181a;
+    --muted: #6b6f76;
+    --accent: #0d9488;
+    --accent-dim: #e6f4f2;
+    --danger: #b91c1c;
+    --mono: "SF Mono", "Cascadia Code", Consolas, monospace;
+    --sans: -apple-system, "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+
+  .layout-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .layout-bar span {
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+
+  .panel-toggles {
+    display: flex;
+    gap: 6px;
+  }
+
+  .toggle-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+  .toggle-btn.active {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+  }
+
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 1px;
+    background: var(--border);
+    overflow: hidden;
+  }
+
+  .panel {
+    background: var(--panel);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .panel.panel-hidden {
+    display: none;
+  }
+
+  .panel h2 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--ink);
+  }
+
+  .panel-body {
+    flex: 1;
+    min-height: 0;
+    padding: 14px;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+
+  #data-table-wrap {
+    overflow-x: auto;
+  }
+
+  /* --- Data preview --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 5px 8px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  th {
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .file-note {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-toolbar h2 {
+    padding: 0;
+    border: none;
+  }
+
+  #load-btn {
+    background: var(--accent);
+    padding: 6px 12px;
+    font-size: 12.5px;
+  }
+
+  #data-status {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  #data-status.error {
+    color: var(--danger);
+  }
+
+  #data-empty {
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  /* --- Chat --- */
+  #chat-messages {
+    flex: 1;
+    min-height: 0;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .msg {
+    max-width: 85%;
+    padding: 8px 11px;
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .msg-assistant {
+    background: var(--accent-dim);
+    align-self: flex-start;
+  }
+
+  .msg-user {
+    background: #f0f0ee;
+    align-self: flex-end;
+  }
+
+  form#chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  #chat-input {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--sans);
+  }
+
+  #chat-input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 13px;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    cursor: pointer;
+    background: var(--ink);
+    color: white;
+  }
+
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  /* --- Reasoning trace --- */
+  .step {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .step-index {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding-top: 1px;
+  }
+
+  .step-body .step-title {
+    font-weight: 600;
+    font-size: 12.5px;
+  }
+
+  .step-body .step-detail {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+    font-family: var(--mono);
+  }
+
+  /* --- Footer bridge test --- */
+  footer {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    font-size: 12.5px;
+  }
+
+  #conn-status {
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+
+  <header>
+    <h1>Klo</h1>
+    <p></p>
+  </header>
+
+  <div class="layout-bar">
+    <span>Panels</span>
+    <div class="panel-toggles">
+      <button class="toggle-btn active" data-panel="data">Data preview</button>
+      <button class="toggle-btn active" data-panel="chat">Chat</button>
+      <button class="toggle-btn active" data-panel="reasoning">Reasoning trace</button>
+    </div>
+  </div>
+
+  <main>
+    <section class="panel" data-panel="data">
+      <div class="panel-toolbar">
+        <h2>Data preview</h2>
+        <button id="load-btn" disabled>Load file</button>
+      </div>
+      <div class="panel-body">
+        <div id="data-status"></div>
+        <div id="data-table-wrap">
+          <p id="data-empty">No file loaded yet — click "Load file" to pick a .xlsx or .xls or .csv file.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-panel="chat">
+      <h2>Chat</h2>
+      <div id="chat-messages">
+        <div class="msg msg-assistant">This is a placeholder message. Once the agent loop is connected, answers will cite the tool calls that produced them.</div>
+      </div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="Type a message (local echo only)" autocomplete="off">
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <section class="panel" data-panel="reasoning">
+      <h2>Reasoning trace</h2>
+      <div class="panel-body">
+        <div class="step">
+          <div class="step-index">1</div>
+          <div class="step-body">
+            <div class="step-title">Plan</div>
+            <div class="step-detail">decide which tool answers the question</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">2</div>
+          <div class="step-body">
+            <div class="step-title">Act</div>
+            <div class="step-detail">run_group_aggregate(by="region")</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">3</div>
+          <div class="step-body">
+            <div class="step-title">Observe</div>
+            <div class="step-detail">3 rows returned</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-index">4</div>
+          <div class="step-body">
+            <div class="step-title">Reflect</div>
+            <div class="step-detail">enough to answer, stop</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="ping-btn" disabled>Test backend connection</button>
+    <span id="conn-status">waiting for pywebview bridge…</span>
+  </footer>
+
+<script>
+  const pingBtn = document.getElementById('ping-btn');
+  const statusEl = document.getElementById('conn-status');
+
+  function setStatus(text, state) {
+    statusEl.textContent = text;
+    statusEl.style.color = state === 'ok' ? 'var(--accent)'
+                          : state === 'error' ? 'var(--danger)'
+                          : 'var(--muted)';
+  }
+
+  const loadBtn = document.getElementById('load-btn');
+  const dataStatus = document.getElementById('data-status');
+  const dataTableWrap = document.getElementById('data-table-wrap');
+
+  function enableBridgeButtons() {
+    pingBtn.disabled = false;
+    loadBtn.disabled = false;
+    setStatus('bridge ready — click to test', null);
+  }
+
+  window.addEventListener('pywebviewready', enableBridgeButtons);
+
+  // Fallback in case the pywebviewready event fires before this script runs
+  if (window.pywebview) enableBridgeButtons();
+
+  pingBtn.addEventListener('click', async () => {
+    setStatus('calling python…', null);
+    try {
+      const result = await window.pywebview.api.ping();
+      setStatus(result, 'ok');
+    } catch (err) {
+      setStatus('call failed: ' + err, 'error');
+    }
+  });
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+
+  function renderTable(columns, rows) {
+    if (!rows || !rows.length) {
+      dataTableWrap.innerHTML = '<p id="data-empty">Sheet loaded, but it has no rows.</p>';
+      return;
+    }
+    const thead = '<tr>' + columns.map((c) => `<th>${escapeHtml(c)}</th>`).join('') + '</tr>';
+    const tbody = rows.map((row) =>
+      '<tr>' + row.map((cell) => `<td>${cell === null ? '' : escapeHtml(cell)}</td>`).join('') + '</tr>'
+    ).join('');
+    dataTableWrap.innerHTML = `<table><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  }
+
+  loadBtn.addEventListener('click', async () => {
+    loadBtn.disabled = true;
+    dataStatus.classList.remove('error');
+    dataStatus.textContent = 'opening file picker…';
+    try {
+      const result = await window.pywebview.api.load_file();
+      if (!result.ok) {
+        dataStatus.textContent = result.error;
+        dataStatus.classList.add('error');
+      } else {
+        dataStatus.textContent = `${result.filename} — ${result.row_count} rows, ${result.col_count} cols`;
+        renderTable(result.columns, result.rows);
+      }
+    } catch (err) {
+      dataStatus.textContent = 'call failed: ' + err;
+      dataStatus.classList.add('error');
+    } finally {
+      loadBtn.disabled = false;
+    }
+  });
+
+  // Panel show/hide — toggling one off lets the remaining panel(s) expand
+  // to fill the freed space, so hiding down to one panel maximizes it.
+  const PANEL_WEIGHTS = { data: 1, chat: 1.3, reasoning: 1 };
+  const panelEls = {
+    data: document.querySelector('.panel[data-panel="data"]'),
+    chat: document.querySelector('.panel[data-panel="chat"]'),
+    reasoning: document.querySelector('.panel[data-panel="reasoning"]'),
+  };
+  const mainEl = document.querySelector('main');
+
+  function updateGridColumns() {
+    const visible = Object.keys(panelEls).filter((k) => !panelEls[k].classList.contains('panel-hidden'));
+    mainEl.style.gridTemplateColumns = visible.map((k) => `${PANEL_WEIGHTS[k]}fr`).join(' ');
+  }
+
+  document.querySelectorAll('.toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.panel;
+      const isCurrentlyVisible = btn.classList.contains('active');
+      if (isCurrentlyVisible) {
+        const visibleCount = Object.values(panelEls).filter((el) => !el.classList.contains('panel-hidden')).length;
+        if (visibleCount <= 1) return; // keep at least one panel visible
+      }
+      btn.classList.toggle('active');
+      panelEls[key].classList.toggle('panel-hidden');
+      updateGridColumns();
+    });
+  });
+
+  // Local-only chat echo, just to confirm JS event wiring renders correctly
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const chatMessages = document.getElementById('chat-messages');
+
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg msg-user';
+    bubble.textContent = text;
+    chatMessages.appendChild(bubble);
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  });
+</script>
+
+</body>
+</html>
